@@ -74,6 +74,9 @@
         canvas.height = 600;
         document.getElementById('canvas-container').appendChild(canvas);
         
+        // Constants
+        const PIXELS_PER_METER = 100; // Conversion factor for pixel distance to meters
+        
         // State variables
         let paperPulled = 0;
         let isDragging = false;
@@ -224,7 +227,7 @@
         function onPointerDown(event) {
             event.preventDefault();
             isDragging = true;
-            const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+            const clientY = event.clientY || (event.touches && event.touches.length > 0 ? event.touches[0].clientY : 0);
             startY = clientY;
         }
         
@@ -232,13 +235,13 @@
             if (!isDragging) return;
             event.preventDefault();
             
-            const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+            const clientY = event.clientY || (event.touches && event.touches.length > 0 ? event.touches[0].clientY : 0);
             const deltaY = clientY - startY;
             
             if (deltaY > 0) {
                 // Pull down - extend the paper
                 paperPulled += deltaY;
-                totalMeters += deltaY / 100; // Convert pixels to "meters"
+                totalMeters += deltaY / PIXELS_PER_METER; // Convert pixels to "meters"
                 
                 // Rotate the roll as paper is pulled
                 rotation += deltaY * 0.01;
@@ -265,13 +268,6 @@
         canvas.addEventListener('touchstart', onPointerDown);
         canvas.addEventListener('touchmove', onPointerMove);
         canvas.addEventListener('touchend', onPointerUp);
-        
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            // Keep canvas centered
-            const container = document.getElementById('canvas-container');
-            container.style.display = 'flex';
-        });
         
         // Start animation
         draw();
