@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Toilet Paper Roll - Useless Hack</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        canvas {
+            cursor: grab;
+            border-radius: 10px;
+        }
+        
+        canvas:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">🧻 Hold and Pull Down the Toilet Paper! 🧻</div>
+    <div id="counter">Paper pulled: <span id="distance">0</span> meters</div>
+    <div id="canvas-container"></div>
+    
+    <script>
+        // Canvas setup
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 800;
+        canvas.height = 600;
+        document.getElementById('canvas-container').appendChild(canvas);
+        
+        // State variables
+        let paperPulled = 0;
+        let isDragging = false;
+        let startY = 0;
+        let rotation = 0;
+        let totalMeters = 0;
+        
+        // Drawing constants
+        const centerX = canvas.width / 2;
+        const rollY = 150;
+        const rollWidth = 200;
+        const rollHeight = 80;
+        const tubeWidth = 60;
+        const paperWidth = 150;
+        
+        // Draw 3D toilet paper roll
+        function drawRoll() {
+            // Draw roll shadow
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetY = 10;
+            
+            // Draw outer roll (beige)
+            const gradient = ctx.createRadialGradient(centerX, rollY, 0, centerX, rollY, rollWidth / 2);
+            gradient.addColorStop(0, '#f5f5dc');
+            gradient.addColorStop(0.7, '#e8e8c0');
+            gradient.addColorStop(1, '#d0d0a8');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.ellipse(centerX, rollY, rollWidth / 2, rollHeight / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // Draw inner tube (brown cardboard)
+            const tubeGradient = ctx.createRadialGradient(centerX, rollY, 0, centerX, rollY, tubeWidth / 2);
+            tubeGradient.addColorStop(0, '#a0826d');
+            tubeGradient.addColorStop(0.7, '#8b7355');
+            tubeGradient.addColorStop(1, '#6b5644');
+            
+            ctx.fillStyle = tubeGradient;
+            ctx.beginPath();
+            ctx.ellipse(centerX, rollY, tubeWidth / 2, rollHeight / 2 - 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw roll texture lines
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                const angle = (rotation + i * Math.PI / 4) % (Math.PI * 2);
+                const x1 = centerX + Math.cos(angle) * tubeWidth / 2;
+                const y1 = rollY + Math.sin(angle) * (rollHeight / 2 - 10);
+                const x2 = centerX + Math.cos(angle) * rollWidth / 2;
+                const y2 = rollY + Math.sin(angle) * rollHeight / 2;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw the toilet paper sheet being pulled
+        function drawPaper() {
+            const paperStartY = rollY + rollHeight / 2;
+            const paperEndY = paperStartY + paperPulled;
+            
+            // Draw paper shadow
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 5;
+            
+            // Main paper sheet
+            const paperGradient = ctx.createLinearGradient(centerX - paperWidth / 2, paperStartY, centerX + paperWidth / 2, paperStartY);
+            paperGradient.addColorStop(0, '#f0f0f0');
+            paperGradient.addColorStop(0.5, '#ffffff');
+            paperGradient.addColorStop(1, '#f0f0f0');
+            
+            ctx.fillStyle = paperGradient;
+            ctx.fillRect(centerX - paperWidth / 2, paperStartY, paperWidth, Math.min(paperEndY - paperStartY, canvas.height - paperStartY));
+            
+            ctx.restore();
+            
+            // Draw paper texture (perforations)
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.lineWidth = 1;
+            const perforationSpacing = 100;
+            for (let y = paperStartY; y < paperEndY && y < canvas.height; y += perforationSpacing) {
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(centerX - paperWidth / 2, y);
+                ctx.lineTo(centerX + paperWidth / 2, y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // Draw paper edges
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX - paperWidth / 2, paperStartY);
+            ctx.lineTo(centerX - paperWidth / 2, Math.min(paperEndY, canvas.height));
+            ctx.moveTo(centerX + paperWidth / 2, paperStartY);
+            ctx.lineTo(centerX + paperWidth / 2, Math.min(paperEndY, canvas.height));
+            ctx.stroke();
+            
+            // Draw a slight wave effect on the paper
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.lineWidth = 1;
+            for (let y = paperStartY; y < paperEndY && y < canvas.height; y += 20) {
+                ctx.beginPath();
+                ctx.moveTo(centerX - paperWidth / 2, y);
+                for (let x = -paperWidth / 2; x <= paperWidth / 2; x += 10) {
+                    const waveY = y + Math.sin((x + y) * 0.1) * 2;
+                    ctx.lineTo(centerX + x, waveY);
+                }
+                ctx.stroke();
+            }
+        }
+        
+        // Main draw function
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background
+            const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGradient.addColorStop(0, '#667eea');
+            bgGradient.addColorStop(1, '#764ba2');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw components
+            drawPaper();
+            drawRoll();
+            
+            // Gentle rotation animation when not dragging
+            if (!isDragging) {
+                rotation += 0.01;
+            }
+            
+            requestAnimationFrame(draw);
+        }
+        
+        // Mouse/Touch event handlers
+        function onPointerDown(event) {
+            event.preventDefault();
+            isDragging = true;
+            const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+            startY = clientY;
+        }
+        
+        function onPointerMove(event) {
+            if (!isDragging) return;
+            event.preventDefault();
+            
+            const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+            const deltaY = clientY - startY;
+            
+            if (deltaY > 0) {
+                // Pull down - extend the paper
+                paperPulled += deltaY;
+                totalMeters += deltaY / 100; // Convert pixels to "meters"
+                
+                // Rotate the roll as paper is pulled
+                rotation += deltaY * 0.01;
+                
+                // Update counter
+                document.getElementById('distance').textContent = totalMeters.toFixed(2);
+                
+                startY = clientY;
+            }
+        }
+        
+        function onPointerUp(event) {
+            event.preventDefault();
+            isDragging = false;
+        }
+        
+        // Event listeners for mouse
+        canvas.addEventListener('mousedown', onPointerDown);
+        canvas.addEventListener('mousemove', onPointerMove);
+        canvas.addEventListener('mouseup', onPointerUp);
+        canvas.addEventListener('mouseleave', onPointerUp);
+        
+        // Event listeners for touch
+        canvas.addEventListener('touchstart', onPointerDown);
+        canvas.addEventListener('touchmove', onPointerMove);
+        canvas.addEventListener('touchend', onPointerUp);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Keep canvas centered
+            const container = document.getElementById('canvas-container');
+            container.style.display = 'flex';
+        });
+        
+        // Start animation
+        draw();
+    </script>
+</body>
+</html>
