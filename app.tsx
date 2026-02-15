@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
-type StickType = 'straight' | 'T' | 'L' | 'reverseL';
+type StickType = 'straight' | 'vertical' | 'T' | 'L' | 'reverseL' | 'circle';
 
 interface InventoryCounts {
   straight: number;
+  vertical: number;
   T: number;
   L: number;
   reverseL: number;
+  circle: number;
 }
 
 interface PlacedStick {
@@ -25,18 +27,41 @@ const App: React.FC = () => {
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [inventory, setInventory] = useState<InventoryCounts>({
     straight: 5,
+    vertical: 5,
     T: 3,
     L: 4,
-    reverseL: 4
+    reverseL: 4,
+    circle: 3
   });
   const [placedSticks, setPlacedSticks] = useState<PlacedStick[]>([]);
   const [draggingStick, setDraggingStick] = useState<StickType | null>(null);
   const [nextId, setNextId] = useState(0);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isShrunken, setIsShrunken] = useState(false);
+  const [canShrink, setCanShrink] = useState(true);
+  const [isTranslucent, setIsTranslucent] = useState(false);
+  const [translucentOpacity, setTranslucentOpacity] = useState(0);
+  const [canGoTranslucent, setCanGoTranslucent] = useState(true);
+  const [gameMode, setGameMode] = useState<'chase' | 'escape'>('escape'); // escape = user chases button, chase = button chases cursor
+  const [showModal, setShowModal] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
   const buttonRef = useRef<HTMLButtonElement>(null);
   
   const handleClick = () => {
-    alert('You caught me! 🎉');
+    setShowModal(true);
+  };
+  
+  const handleClose = () => {
+    setShowModal(false);
+  };
+  
+  const handleSwitchRoles = () => {
+    setGameMode(gameMode === 'escape' ? 'chase' : 'escape');
+    setShowModal(false);
+    // Reset abilities
+    setIsShrunken(false);
+    setIsTranslucent(false);
+    setTranslucentOpacity(1);
   };
 
   const renderStickShape = (type: StickType) => {
@@ -46,6 +71,15 @@ const App: React.FC = () => {
           <div style={{
             width: `${STICK_LENGTH}px`,
             height: `${STICK_WIDTH}px`,
+            backgroundColor: '#8B4513',
+            borderRadius: '3px'
+          }} />
+        );
+      case 'vertical':
+        return (
+          <div style={{
+            width: `${STICK_WIDTH}px`,
+            height: `${STICK_LENGTH}px`,
             backgroundColor: '#8B4513',
             borderRadius: '3px'
           }} />
@@ -118,6 +152,15 @@ const App: React.FC = () => {
               right: '0'
             }} />
           </div>
+        );
+      case 'circle':
+        return (
+          <div style={{
+            width: `${STICK_LENGTH}px`,
+            height: `${STICK_LENGTH}px`,
+            backgroundColor: '#8B4513',
+            borderRadius: '50%'
+          }} />
         );
     }
   };
@@ -198,6 +241,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      // Track mouse position for chase mode
+      const mouseXPercent = (e.clientX / window.innerWidth) * 100;
+      const mouseYPercent = (e.clientY / window.innerHeight) * 100;
+      setMousePosition({ x: mouseXPercent, y: mouseYPercent });
+      
       if (!buttonRef.current || draggingStick) return;
 
       const buttonRect = buttonRef.current.getBoundingClientRect();
@@ -211,7 +259,50 @@ const App: React.FC = () => {
 
       const threshold = 150;
 
-      if (distance < threshold) {
+      if (gameMode === 'escape' && distance < threshold) {
+        // Activate shrink ability if available and user is very close
+        if (canShrink && !isShrunken && !isTranslucent && distance < 100) {
+          setIsShrunken(true);
+          setCanShrink(false);
+          
+          // Revert shrink after 3 seconds
+          setTimeout(() => {
+            setIsShrunken(false);
+          }, 3000);
+          
+          // Cooldown of 8 seconds
+          setTimeout(() => {
+            setCanShrink(true);
+          }, 11000); // 3 seconds active + 8 seconds cooldown
+        }
+        
+        // Activate translucent ability if available and at medium distance
+        if (canGoTranslucent && !isTranslucent && !isShrunken && distance >= 100 && distance < 130) {
+          setIsTranslucent(true);
+          setCanGoTranslucent(false);
+          setTranslucentOpacity(0);
+          
+          // Create pulsing effect: 0% most of the time, 15% for 0.2s every 0.8s
+          const pulseInterval = setInterval(() => {
+            setTranslucentOpacity(0.15);
+            setTimeout(() => {
+              setTranslucentOpacity(0);
+            }, 200);
+          }, 800);
+          
+          // Revert translucent after 4 seconds
+          setTimeout(() => {
+            clearInterval(pulseInterval);
+            setIsTranslucent(false);
+            setTranslucentOpacity(1);
+          }, 4000);
+          
+          // Cooldown of 10 seconds
+          setTimeout(() => {
+            setCanGoTranslucent(true);
+          }, 14000); // 4 seconds active + 10 seconds cooldown
+        }
+
         const angle = Math.atan2(
           buttonCenterY - e.clientY,
           buttonCenterX - e.clientX
@@ -247,7 +338,38 @@ const App: React.FC = () => {
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [position, placedSticks, draggingStick]);
+  }, [position, placedSticks, draggingStick, gameMode, canShrink, isShrunken, canGoTranslucent, isTranslucent, translucentOpacity]);
+  
+  // Chase mode: button follows cursor
+  useEffect(() => {
+    if (gameMode === 'chase' && !draggingStick) {
+      const chaseInterval = setInterval(() => {
+        const dx = mousePosition.x - position.x;
+        const dy = mousePosition.y - position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Check if button caught the cursor
+        if (distance < 5) {
+          setShowModal(true);
+          return;
+        }
+        
+        // Move button towards cursor (slower than escape mode)
+        const speed = 0.5; // slower than escape mode
+        const newX = position.x + (dx / distance) * speed;
+        const newY = position.y + (dy / distance) * speed;
+        
+        const clampedX = Math.max(5, Math.min(95, newX));
+        const clampedY = Math.max(5, Math.min(85, newY));
+        
+        if (!checkCollision(clampedX, clampedY)) {
+          setPosition({ x: clampedX, y: clampedY });
+        }
+      }, 50);
+      
+      return () => clearInterval(chaseInterval);
+    }
+  }, [gameMode, mousePosition, position, draggingStick, placedSticks]);
 
   return (
     <div style={{ 
@@ -263,7 +385,7 @@ const App: React.FC = () => {
         bottom: '20px',
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '600px',
+        width: '670px',
         height: '90px',
         backgroundColor: 'rgba(240, 240, 240, 0.85)',
         border: '2px solid rgba(204, 204, 204, 0.8)',
@@ -276,7 +398,6 @@ const App: React.FC = () => {
         zIndex: 1000,
         backdropFilter: 'blur(5px)'
       }}>
-        <div style={{ fontWeight: 'bold', marginRight: '10px' }}>Inventory:</div>
         {(Object.keys(inventory) as StickType[]).map(stickType => (
           inventory[stickType] > 0 && (
             <div
@@ -351,21 +472,84 @@ const App: React.FC = () => {
           position: 'absolute',
           left: `${position.x}%`,
           top: `${position.y}%`,
-          transform: 'translate(-50%, -50%)',
+          transform: `translate(-50%, -50%) scale(${isShrunken ? 0.4 : 1})`,
           padding: '12px 24px',
           fontSize: '16px',
           cursor: 'pointer',
-          backgroundColor: '#007bff',
+          backgroundColor: '#ff0000',
           color: 'white',
           border: 'none',
           borderRadius: '4px',
           transition: 'all 0.15s ease-out',
           whiteSpace: 'nowrap',
-          zIndex: 100
+          zIndex: 100,
+          opacity: isTranslucent ? translucentOpacity : 1
         }}
       >
         Click Me
       </button>
+      
+      {/* Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '40px',
+            borderRadius: '10px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center',
+            maxWidth: '400px'
+          }}>
+            <h2 style={{ marginBottom: '20px', color: '#333' }}>
+              {gameMode === 'escape' ? 'You caught me! 🎉' : 'I caught you! 😈'}
+            </h2>
+            <p style={{ marginBottom: '30px', color: '#666' }}>
+              Were you that bored? If so, let's do it again
+            </p>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button
+                onClick={handleClose}
+                style={{
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px'
+                }}
+              >
+                Close
+              </button>
+              <button
+                onClick={handleSwitchRoles}
+                style={{
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px'
+                }}
+              >
+                Switch Roles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

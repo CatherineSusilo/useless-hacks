@@ -738,9 +738,11 @@ const App = ()=>{
     });
     const [inventory, setInventory] = (0, _react.useState)({
         straight: 5,
+        vertical: 5,
         T: 3,
         L: 4,
-        reverseL: 4
+        reverseL: 4,
+        circle: 3
     });
     const [placedSticks, setPlacedSticks] = (0, _react.useState)([]);
     const [draggingStick, setDraggingStick] = (0, _react.useState)(null);
@@ -749,9 +751,14 @@ const App = ()=>{
         x: 0,
         y: 0
     });
+    const [isShrunken, setIsShrunken] = (0, _react.useState)(false);
+    const [canShrink, setCanShrink] = (0, _react.useState)(true);
+    const [isTranslucent, setIsTranslucent] = (0, _react.useState)(false);
+    const [translucentOpacity, setTranslucentOpacity] = (0, _react.useState)(0);
+    const [canGoTranslucent, setCanGoTranslucent] = (0, _react.useState)(true);
     const buttonRef = (0, _react.useRef)(null);
     const handleClick = ()=>{
-        alert("You caught me! \uD83C\uDF89");
+        alert('Were you that bored? If so, let\'s do it again');
     };
     const renderStickShape = (type)=>{
         switch(type){
@@ -765,7 +772,20 @@ const App = ()=>{
                     }
                 }, void 0, false, {
                     fileName: "app.tsx",
-                    lineNumber: 46,
+                    lineNumber: 55,
+                    columnNumber: 11
+                }, undefined);
+            case 'vertical':
+                return /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                    style: {
+                        width: `${STICK_WIDTH}px`,
+                        height: `${STICK_LENGTH}px`,
+                        backgroundColor: '#8B4513',
+                        borderRadius: '3px'
+                    }
+                }, void 0, false, {
+                    fileName: "app.tsx",
+                    lineNumber: 64,
                     columnNumber: 11
                 }, undefined);
             case 'T':
@@ -788,7 +808,7 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 56,
+                            lineNumber: 74,
                             columnNumber: 13
                         }, undefined),
                         /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -803,13 +823,13 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 65,
+                            lineNumber: 83,
                             columnNumber: 13
                         }, undefined)
                     ]
                 }, void 0, true, {
                     fileName: "app.tsx",
-                    lineNumber: 55,
+                    lineNumber: 73,
                     columnNumber: 11
                 }, undefined);
             case 'L':
@@ -832,7 +852,7 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 79,
+                            lineNumber: 97,
                             columnNumber: 13
                         }, undefined),
                         /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -847,13 +867,13 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 88,
+                            lineNumber: 106,
                             columnNumber: 13
                         }, undefined)
                     ]
                 }, void 0, true, {
                     fileName: "app.tsx",
-                    lineNumber: 78,
+                    lineNumber: 96,
                     columnNumber: 11
                 }, undefined);
             case 'reverseL':
@@ -876,7 +896,7 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 102,
+                            lineNumber: 120,
                             columnNumber: 13
                         }, undefined),
                         /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -891,13 +911,26 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 111,
+                            lineNumber: 129,
                             columnNumber: 13
                         }, undefined)
                     ]
                 }, void 0, true, {
                     fileName: "app.tsx",
-                    lineNumber: 101,
+                    lineNumber: 119,
+                    columnNumber: 11
+                }, undefined);
+            case 'circle':
+                return /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                    style: {
+                        width: `${STICK_LENGTH}px`,
+                        height: `${STICK_LENGTH}px`,
+                        backgroundColor: '#8B4513',
+                        borderRadius: '50%'
+                    }
+                }, void 0, false, {
+                    fileName: "app.tsx",
+                    lineNumber: 142,
                     columnNumber: 11
                 }, undefined);
         }
@@ -982,6 +1015,42 @@ const App = ()=>{
             const distance = Math.sqrt(Math.pow(e.clientX - buttonCenterX, 2) + Math.pow(e.clientY - buttonCenterY, 2));
             const threshold = 150;
             if (distance < threshold) {
+                // Activate shrink ability if available and user is very close
+                if (canShrink && !isShrunken && !isTranslucent && distance < 100) {
+                    setIsShrunken(true);
+                    setCanShrink(false);
+                    // Revert shrink after 3 seconds
+                    setTimeout(()=>{
+                        setIsShrunken(false);
+                    }, 3000);
+                    // Cooldown of 8 seconds
+                    setTimeout(()=>{
+                        setCanShrink(true);
+                    }, 11000); // 3 seconds active + 8 seconds cooldown
+                }
+                // Activate translucent ability if available and at medium distance
+                if (canGoTranslucent && !isTranslucent && !isShrunken && distance >= 100 && distance < 130) {
+                    setIsTranslucent(true);
+                    setCanGoTranslucent(false);
+                    setTranslucentOpacity(0);
+                    // Create pulsing effect: 0% most of the time, 15% for 0.2s every 0.8s
+                    const pulseInterval = setInterval(()=>{
+                        setTranslucentOpacity(0.15);
+                        setTimeout(()=>{
+                            setTranslucentOpacity(0);
+                        }, 200);
+                    }, 800);
+                    // Revert translucent after 4 seconds
+                    setTimeout(()=>{
+                        clearInterval(pulseInterval);
+                        setIsTranslucent(false);
+                        setTranslucentOpacity(1);
+                    }, 4000);
+                    // Cooldown of 10 seconds
+                    setTimeout(()=>{
+                        setCanGoTranslucent(true);
+                    }, 14000); // 4 seconds active + 10 seconds cooldown
+                }
                 const angle = Math.atan2(buttonCenterY - e.clientY, buttonCenterX - e.clientX);
                 const jumpDistance = 15;
                 const newX = position.x + Math.cos(angle) * jumpDistance;
@@ -1039,7 +1108,7 @@ const App = ()=>{
                     bottom: '20px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    width: '600px',
+                    width: '670px',
                     height: '90px',
                     backgroundColor: 'rgba(240, 240, 240, 0.85)',
                     border: '2px solid rgba(204, 204, 204, 0.8)',
@@ -1052,69 +1121,56 @@ const App = ()=>{
                     zIndex: 1000,
                     backdropFilter: 'blur(5px)'
                 },
-                children: [
-                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                children: Object.keys(inventory).map((stickType)=>inventory[stickType] > 0 && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                        onMouseDown: (e)=>handleDragStart(stickType, e),
                         style: {
-                            fontWeight: 'bold',
-                            marginRight: '10px'
+                            cursor: 'grab',
+                            padding: '5px',
+                            display: 'inline-block',
+                            position: 'relative'
                         },
-                        children: "Inventory:"
-                    }, void 0, false, {
+                        children: [
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                style: {
+                                    transform: 'scale(0.5)',
+                                    transformOrigin: 'bottom left'
+                                },
+                                children: renderStickShape(stickType)
+                            }, void 0, false, {
+                                fileName: "app.tsx",
+                                lineNumber: 361,
+                                columnNumber: 15
+                            }, undefined),
+                            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                style: {
+                                    position: 'absolute',
+                                    bottom: '5px',
+                                    right: '5px',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                    color: 'white',
+                                    padding: '2px 6px',
+                                    borderRadius: '3px',
+                                    fontSize: '12px',
+                                    fontWeight: 'bold'
+                                },
+                                children: [
+                                    "x",
+                                    inventory[stickType]
+                                ]
+                            }, void 0, true, {
+                                fileName: "app.tsx",
+                                lineNumber: 364,
+                                columnNumber: 15
+                            }, undefined)
+                        ]
+                    }, stickType, true, {
                         fileName: "app.tsx",
-                        lineNumber: 279,
-                        columnNumber: 9
-                    }, undefined),
-                    Object.keys(inventory).map((stickType)=>inventory[stickType] > 0 && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
-                            onMouseDown: (e)=>handleDragStart(stickType, e),
-                            style: {
-                                cursor: 'grab',
-                                padding: '5px',
-                                display: 'inline-block',
-                                position: 'relative'
-                            },
-                            children: [
-                                /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
-                                    style: {
-                                        transform: 'scale(0.5)',
-                                        transformOrigin: 'bottom left'
-                                    },
-                                    children: renderStickShape(stickType)
-                                }, void 0, false, {
-                                    fileName: "app.tsx",
-                                    lineNumber: 292,
-                                    columnNumber: 15
-                                }, undefined),
-                                /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
-                                    style: {
-                                        position: 'absolute',
-                                        bottom: '5px',
-                                        right: '5px',
-                                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                                        color: 'white',
-                                        padding: '2px 6px',
-                                        borderRadius: '3px',
-                                        fontSize: '12px',
-                                        fontWeight: 'bold'
-                                    },
-                                    children: [
-                                        "x",
-                                        inventory[stickType]
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "app.tsx",
-                                    lineNumber: 295,
-                                    columnNumber: 15
-                                }, undefined)
-                            ]
-                        }, stickType, true, {
-                            fileName: "app.tsx",
-                            lineNumber: 282,
-                            columnNumber: 13
-                        }, undefined))
-                ]
-            }, void 0, true, {
+                        lineNumber: 351,
+                        columnNumber: 13
+                    }, undefined))
+            }, void 0, false, {
                 fileName: "app.tsx",
-                lineNumber: 261,
+                lineNumber: 331,
                 columnNumber: 7
             }, undefined),
             placedSticks.map((stick)=>/*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -1128,7 +1184,7 @@ const App = ()=>{
                     children: renderStickShape(stick.type)
                 }, stick.id, false, {
                     fileName: "app.tsx",
-                    lineNumber: 315,
+                    lineNumber: 384,
                     columnNumber: 9
                 }, undefined)),
             draggingStick && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -1144,7 +1200,7 @@ const App = ()=>{
                 children: renderStickShape(draggingStick)
             }, void 0, false, {
                 fileName: "app.tsx",
-                lineNumber: 331,
+                lineNumber: 400,
                 columnNumber: 9
             }, undefined),
             /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
@@ -1154,37 +1210,38 @@ const App = ()=>{
                     position: 'absolute',
                     left: `${position.x}%`,
                     top: `${position.y}%`,
-                    transform: 'translate(-50%, -50%)',
+                    transform: `translate(-50%, -50%) scale(${isShrunken ? 0.4 : 1})`,
                     padding: '12px 24px',
                     fontSize: '16px',
                     cursor: 'pointer',
-                    backgroundColor: '#007bff',
+                    backgroundColor: '#ff0000',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
                     transition: 'all 0.15s ease-out',
                     whiteSpace: 'nowrap',
-                    zIndex: 100
+                    zIndex: 100,
+                    opacity: isTranslucent ? translucentOpacity : 1
                 },
                 children: "Click Me"
             }, void 0, false, {
                 fileName: "app.tsx",
-                lineNumber: 347,
+                lineNumber: 416,
                 columnNumber: 7
             }, undefined)
         ]
     }, void 0, true, {
         fileName: "app.tsx",
-        lineNumber: 253,
+        lineNumber: 323,
         columnNumber: 5
     }, undefined);
 };
-_s(App, "dcZ7+ThTRziAKXr0rgk25N4yyh0=");
+_s(App, "LMdVF4/ILFz/9vy6z7c1Y19qsLs=");
 _c = App;
 const root = (0, _clientDefault.default).createRoot(document.getElementById('root'));
 root.render(/*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)(App, {}, void 0, false, {
     fileName: "app.tsx",
-    lineNumber: 374,
+    lineNumber: 444,
     columnNumber: 13
 }, undefined));
 var _c;
