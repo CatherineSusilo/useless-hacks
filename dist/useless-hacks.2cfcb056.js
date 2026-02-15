@@ -728,44 +728,301 @@ var _reactDefault = parcelHelpers.interopDefault(_react);
 var _client = require("react-dom/client");
 var _clientDefault = parcelHelpers.interopDefault(_client);
 var _s = $RefreshSig$();
+const STICK_WIDTH = 20;
+const STICK_LENGTH = 100;
 const App = ()=>{
     _s();
     const [position, setPosition] = (0, _react.useState)({
         x: 50,
         y: 50
-    }); // percentage position
+    });
+    const [inventory, setInventory] = (0, _react.useState)({
+        straight: 5,
+        T: 3,
+        L: 4,
+        reverseL: 4
+    });
+    const [placedSticks, setPlacedSticks] = (0, _react.useState)([]);
+    const [draggingStick, setDraggingStick] = (0, _react.useState)(null);
+    const [nextId, setNextId] = (0, _react.useState)(0);
+    const [dragOffset, setDragOffset] = (0, _react.useState)({
+        x: 0,
+        y: 0
+    });
     const buttonRef = (0, _react.useRef)(null);
     const handleClick = ()=>{
         alert("You caught me! \uD83C\uDF89");
     };
+    const renderStickShape = (type)=>{
+        switch(type){
+            case 'straight':
+                return /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                    style: {
+                        width: `${STICK_LENGTH}px`,
+                        height: `${STICK_WIDTH}px`,
+                        backgroundColor: '#8B4513',
+                        borderRadius: '3px'
+                    }
+                }, void 0, false, {
+                    fileName: "app.tsx",
+                    lineNumber: 46,
+                    columnNumber: 11
+                }, undefined);
+            case 'T':
+                return /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                    style: {
+                        position: 'relative',
+                        width: `${STICK_LENGTH}px`,
+                        height: `${STICK_LENGTH}px`
+                    },
+                    children: [
+                        /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                            style: {
+                                position: 'absolute',
+                                width: `${STICK_LENGTH}px`,
+                                height: `${STICK_WIDTH}px`,
+                                backgroundColor: '#8B4513',
+                                borderRadius: '3px',
+                                top: '0',
+                                left: '0'
+                            }
+                        }, void 0, false, {
+                            fileName: "app.tsx",
+                            lineNumber: 56,
+                            columnNumber: 13
+                        }, undefined),
+                        /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                            style: {
+                                position: 'absolute',
+                                width: `${STICK_WIDTH}px`,
+                                height: `${STICK_LENGTH}px`,
+                                backgroundColor: '#8B4513',
+                                borderRadius: '3px',
+                                top: '0',
+                                left: `${(STICK_LENGTH - STICK_WIDTH) / 2}px`
+                            }
+                        }, void 0, false, {
+                            fileName: "app.tsx",
+                            lineNumber: 65,
+                            columnNumber: 13
+                        }, undefined)
+                    ]
+                }, void 0, true, {
+                    fileName: "app.tsx",
+                    lineNumber: 55,
+                    columnNumber: 11
+                }, undefined);
+            case 'L':
+                return /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                    style: {
+                        position: 'relative',
+                        width: `${STICK_LENGTH}px`,
+                        height: `${STICK_LENGTH}px`
+                    },
+                    children: [
+                        /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                            style: {
+                                position: 'absolute',
+                                width: `${STICK_WIDTH}px`,
+                                height: `${STICK_LENGTH}px`,
+                                backgroundColor: '#8B4513',
+                                borderRadius: '3px',
+                                bottom: '0',
+                                left: '0'
+                            }
+                        }, void 0, false, {
+                            fileName: "app.tsx",
+                            lineNumber: 79,
+                            columnNumber: 13
+                        }, undefined),
+                        /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                            style: {
+                                position: 'absolute',
+                                width: `${STICK_LENGTH}px`,
+                                height: `${STICK_WIDTH}px`,
+                                backgroundColor: '#8B4513',
+                                borderRadius: '3px',
+                                bottom: '0',
+                                left: '0'
+                            }
+                        }, void 0, false, {
+                            fileName: "app.tsx",
+                            lineNumber: 88,
+                            columnNumber: 13
+                        }, undefined)
+                    ]
+                }, void 0, true, {
+                    fileName: "app.tsx",
+                    lineNumber: 78,
+                    columnNumber: 11
+                }, undefined);
+            case 'reverseL':
+                return /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                    style: {
+                        position: 'relative',
+                        width: `${STICK_LENGTH}px`,
+                        height: `${STICK_LENGTH}px`
+                    },
+                    children: [
+                        /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                            style: {
+                                position: 'absolute',
+                                width: `${STICK_WIDTH}px`,
+                                height: `${STICK_LENGTH}px`,
+                                backgroundColor: '#8B4513',
+                                borderRadius: '3px',
+                                bottom: '0',
+                                right: '0'
+                            }
+                        }, void 0, false, {
+                            fileName: "app.tsx",
+                            lineNumber: 102,
+                            columnNumber: 13
+                        }, undefined),
+                        /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                            style: {
+                                position: 'absolute',
+                                width: `${STICK_LENGTH}px`,
+                                height: `${STICK_WIDTH}px`,
+                                backgroundColor: '#8B4513',
+                                borderRadius: '3px',
+                                bottom: '0',
+                                right: '0'
+                            }
+                        }, void 0, false, {
+                            fileName: "app.tsx",
+                            lineNumber: 111,
+                            columnNumber: 13
+                        }, undefined)
+                    ]
+                }, void 0, true, {
+                    fileName: "app.tsx",
+                    lineNumber: 101,
+                    columnNumber: 11
+                }, undefined);
+        }
+    };
+    const handleDragStart = (stickType, e)=>{
+        if (inventory[stickType] > 0) {
+            setDraggingStick(stickType);
+            setDragOffset({
+                x: e.clientX,
+                y: e.clientY
+            });
+        }
+    };
+    const handleDragMove = (e)=>{
+        if (draggingStick) setDragOffset({
+            x: e.clientX,
+            y: e.clientY
+        });
+    };
+    const handleDragEnd = (e)=>{
+        if (draggingStick && e.clientY < window.innerHeight - 100) {
+            const placed = {
+                id: `stick-${nextId}`,
+                type: draggingStick,
+                x: e.clientX,
+                y: e.clientY,
+                rotation: 0
+            };
+            setPlacedSticks([
+                ...placedSticks,
+                placed
+            ]);
+            setInventory({
+                ...inventory,
+                [draggingStick]: inventory[draggingStick] - 1
+            });
+            setNextId(nextId + 1);
+        }
+        setDraggingStick(null);
+    };
+    (0, _react.useEffect)(()=>{
+        if (draggingStick) {
+            window.addEventListener('mousemove', handleDragMove);
+            window.addEventListener('mouseup', handleDragEnd);
+            return ()=>{
+                window.removeEventListener('mousemove', handleDragMove);
+                window.removeEventListener('mouseup', handleDragEnd);
+            };
+        }
+    }, [
+        draggingStick,
+        inventory,
+        placedSticks,
+        nextId
+    ]);
+    const checkCollision = (newX, newY)=>{
+        if (!buttonRef.current) return false;
+        const buttonRect = {
+            left: newX / 100 * window.innerWidth - 50,
+            right: newX / 100 * window.innerWidth + 50,
+            top: newY / 100 * window.innerHeight - 25,
+            bottom: newY / 100 * window.innerHeight + 25
+        };
+        for (const stick of placedSticks){
+            const stickSize = stick.type === 'straight' ? STICK_LENGTH : STICK_LENGTH;
+            const stickRect = {
+                left: stick.x - stickSize / 2,
+                right: stick.x + stickSize / 2,
+                top: stick.y - stickSize / 2,
+                bottom: stick.y + stickSize / 2
+            };
+            if (buttonRect.left < stickRect.right && buttonRect.right > stickRect.left && buttonRect.top < stickRect.bottom && buttonRect.bottom > stickRect.top) return true;
+        }
+        return false;
+    };
     (0, _react.useEffect)(()=>{
         const handleMouseMove = (e)=>{
-            if (!buttonRef.current) return;
+            if (!buttonRef.current || draggingStick) return;
             const buttonRect = buttonRef.current.getBoundingClientRect();
             const buttonCenterX = buttonRect.left + buttonRect.width / 2;
             const buttonCenterY = buttonRect.top + buttonRect.height / 2;
             const distance = Math.sqrt(Math.pow(e.clientX - buttonCenterX, 2) + Math.pow(e.clientY - buttonCenterY, 2));
-            const threshold = 150; // pixels
+            const threshold = 150;
             if (distance < threshold) {
-                // Calculate direction away from cursor
                 const angle = Math.atan2(buttonCenterY - e.clientY, buttonCenterX - e.clientX);
-                // Move button away (larger jump for smoother escape)
-                const jumpDistance = 15; // percentage points
+                const jumpDistance = 15;
                 const newX = position.x + Math.cos(angle) * jumpDistance;
                 const newY = position.y + Math.sin(angle) * jumpDistance;
-                // Keep button within bounds (5% to 95%)
                 const clampedX = Math.max(5, Math.min(95, newX));
-                const clampedY = Math.max(5, Math.min(95, newY));
-                setPosition({
+                const clampedY = Math.max(5, Math.min(85, newY));
+                // Check if new position collides with any stick
+                if (!checkCollision(clampedX, clampedY)) setPosition({
                     x: clampedX,
                     y: clampedY
                 });
+                else {
+                    // Try alternative escape directions
+                    const altAngles = [
+                        angle + Math.PI / 4,
+                        angle - Math.PI / 4,
+                        angle + Math.PI / 2,
+                        angle - Math.PI / 2
+                    ];
+                    for (const altAngle of altAngles){
+                        const altX = position.x + Math.cos(altAngle) * jumpDistance;
+                        const altY = position.y + Math.sin(altAngle) * jumpDistance;
+                        const altClampedX = Math.max(5, Math.min(95, altX));
+                        const altClampedY = Math.max(5, Math.min(85, altY));
+                        if (!checkCollision(altClampedX, altClampedY)) {
+                            setPosition({
+                                x: altClampedX,
+                                y: altClampedY
+                            });
+                            break;
+                        }
+                    }
+                }
             }
         };
         window.addEventListener('mousemove', handleMouseMove);
         return ()=>window.removeEventListener('mousemove', handleMouseMove);
     }, [
-        position
+        position,
+        placedSticks,
+        draggingStick
     ]);
     return /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
         style: {
@@ -775,42 +1032,159 @@ const App = ()=>{
             position: 'relative',
             overflow: 'hidden'
         },
-        children: /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
-            ref: buttonRef,
-            onClick: handleClick,
-            style: {
-                position: 'absolute',
-                left: `${position.x}%`,
-                top: `${position.y}%`,
-                transform: 'translate(-50%, -50%)',
-                padding: '12px 24px',
-                fontSize: '16px',
-                cursor: 'pointer',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                transition: 'all 0.15s ease-out',
-                whiteSpace: 'nowrap'
-            },
-            children: "Click Me"
-        }, void 0, false, {
-            fileName: "app.tsx",
-            lineNumber: 59,
-            columnNumber: 7
-        }, undefined)
-    }, void 0, false, {
+        children: [
+            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                style: {
+                    position: 'fixed',
+                    bottom: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '600px',
+                    height: '90px',
+                    backgroundColor: 'rgba(240, 240, 240, 0.85)',
+                    border: '2px solid rgba(204, 204, 204, 0.8)',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    gap: '15px',
+                    padding: '10px 20px',
+                    alignItems: 'flex-end',
+                    overflowX: 'auto',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(5px)'
+                },
+                children: [
+                    /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                        style: {
+                            fontWeight: 'bold',
+                            marginRight: '10px'
+                        },
+                        children: "Inventory:"
+                    }, void 0, false, {
+                        fileName: "app.tsx",
+                        lineNumber: 279,
+                        columnNumber: 9
+                    }, undefined),
+                    Object.keys(inventory).map((stickType)=>inventory[stickType] > 0 && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                            onMouseDown: (e)=>handleDragStart(stickType, e),
+                            style: {
+                                cursor: 'grab',
+                                padding: '5px',
+                                display: 'inline-block',
+                                position: 'relative'
+                            },
+                            children: [
+                                /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                    style: {
+                                        transform: 'scale(0.5)',
+                                        transformOrigin: 'bottom left'
+                                    },
+                                    children: renderStickShape(stickType)
+                                }, void 0, false, {
+                                    fileName: "app.tsx",
+                                    lineNumber: 292,
+                                    columnNumber: 15
+                                }, undefined),
+                                /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                                    style: {
+                                        position: 'absolute',
+                                        bottom: '5px',
+                                        right: '5px',
+                                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                        color: 'white',
+                                        padding: '2px 6px',
+                                        borderRadius: '3px',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold'
+                                    },
+                                    children: [
+                                        "x",
+                                        inventory[stickType]
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "app.tsx",
+                                    lineNumber: 295,
+                                    columnNumber: 15
+                                }, undefined)
+                            ]
+                        }, stickType, true, {
+                            fileName: "app.tsx",
+                            lineNumber: 282,
+                            columnNumber: 13
+                        }, undefined))
+                ]
+            }, void 0, true, {
+                fileName: "app.tsx",
+                lineNumber: 261,
+                columnNumber: 7
+            }, undefined),
+            placedSticks.map((stick)=>/*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                    style: {
+                        position: 'absolute',
+                        left: `${stick.x}px`,
+                        top: `${stick.y}px`,
+                        transform: `translate(-50%, -50%) rotate(${stick.rotation}deg)`,
+                        pointerEvents: 'none'
+                    },
+                    children: renderStickShape(stick.type)
+                }, stick.id, false, {
+                    fileName: "app.tsx",
+                    lineNumber: 315,
+                    columnNumber: 9
+                }, undefined)),
+            draggingStick && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                style: {
+                    position: 'fixed',
+                    left: `${dragOffset.x}px`,
+                    top: `${dragOffset.y}px`,
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                    opacity: 0.7,
+                    zIndex: 999
+                },
+                children: renderStickShape(draggingStick)
+            }, void 0, false, {
+                fileName: "app.tsx",
+                lineNumber: 331,
+                columnNumber: 9
+            }, undefined),
+            /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
+                ref: buttonRef,
+                onClick: handleClick,
+                style: {
+                    position: 'absolute',
+                    left: `${position.x}%`,
+                    top: `${position.y}%`,
+                    transform: 'translate(-50%, -50%)',
+                    padding: '12px 24px',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    transition: 'all 0.15s ease-out',
+                    whiteSpace: 'nowrap',
+                    zIndex: 100
+                },
+                children: "Click Me"
+            }, void 0, false, {
+                fileName: "app.tsx",
+                lineNumber: 347,
+                columnNumber: 7
+            }, undefined)
+        ]
+    }, void 0, true, {
         fileName: "app.tsx",
-        lineNumber: 52,
+        lineNumber: 253,
         columnNumber: 5
     }, undefined);
 };
-_s(App, "zApLhf7PWGF+gosN3l/cE6/XaIw=");
+_s(App, "dcZ7+ThTRziAKXr0rgk25N4yyh0=");
 _c = App;
 const root = (0, _clientDefault.default).createRoot(document.getElementById('root'));
 root.render(/*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)(App, {}, void 0, false, {
     fileName: "app.tsx",
-    lineNumber: 85,
+    lineNumber: 374,
     columnNumber: 13
 }, undefined));
 var _c;
