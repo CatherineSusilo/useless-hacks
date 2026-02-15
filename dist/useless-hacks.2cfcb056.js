@@ -756,9 +756,26 @@ const App = ()=>{
     const [isTranslucent, setIsTranslucent] = (0, _react.useState)(false);
     const [translucentOpacity, setTranslucentOpacity] = (0, _react.useState)(0);
     const [canGoTranslucent, setCanGoTranslucent] = (0, _react.useState)(true);
+    const [gameMode, setGameMode] = (0, _react.useState)('escape'); // escape = user chases button, chase = button chases cursor
+    const [showModal, setShowModal] = (0, _react.useState)(false);
+    const [mousePosition, setMousePosition] = (0, _react.useState)({
+        x: 50,
+        y: 50
+    });
     const buttonRef = (0, _react.useRef)(null);
     const handleClick = ()=>{
-        alert('Were you that bored? If so, let\'s do it again');
+        setShowModal(true);
+    };
+    const handleClose = ()=>{
+        setShowModal(false);
+    };
+    const handleSwitchRoles = ()=>{
+        setGameMode(gameMode === 'escape' ? 'chase' : 'escape');
+        setShowModal(false);
+        // Reset abilities
+        setIsShrunken(false);
+        setIsTranslucent(false);
+        setTranslucentOpacity(1);
     };
     const renderStickShape = (type)=>{
         switch(type){
@@ -772,7 +789,7 @@ const App = ()=>{
                     }
                 }, void 0, false, {
                     fileName: "app.tsx",
-                    lineNumber: 55,
+                    lineNumber: 71,
                     columnNumber: 11
                 }, undefined);
             case 'vertical':
@@ -785,7 +802,7 @@ const App = ()=>{
                     }
                 }, void 0, false, {
                     fileName: "app.tsx",
-                    lineNumber: 64,
+                    lineNumber: 80,
                     columnNumber: 11
                 }, undefined);
             case 'T':
@@ -808,7 +825,7 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 74,
+                            lineNumber: 90,
                             columnNumber: 13
                         }, undefined),
                         /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -823,13 +840,13 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 83,
+                            lineNumber: 99,
                             columnNumber: 13
                         }, undefined)
                     ]
                 }, void 0, true, {
                     fileName: "app.tsx",
-                    lineNumber: 73,
+                    lineNumber: 89,
                     columnNumber: 11
                 }, undefined);
             case 'L':
@@ -852,7 +869,7 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 97,
+                            lineNumber: 113,
                             columnNumber: 13
                         }, undefined),
                         /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -867,13 +884,13 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 106,
+                            lineNumber: 122,
                             columnNumber: 13
                         }, undefined)
                     ]
                 }, void 0, true, {
                     fileName: "app.tsx",
-                    lineNumber: 96,
+                    lineNumber: 112,
                     columnNumber: 11
                 }, undefined);
             case 'reverseL':
@@ -896,7 +913,7 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 120,
+                            lineNumber: 136,
                             columnNumber: 13
                         }, undefined),
                         /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -911,13 +928,13 @@ const App = ()=>{
                             }
                         }, void 0, false, {
                             fileName: "app.tsx",
-                            lineNumber: 129,
+                            lineNumber: 145,
                             columnNumber: 13
                         }, undefined)
                     ]
                 }, void 0, true, {
                     fileName: "app.tsx",
-                    lineNumber: 119,
+                    lineNumber: 135,
                     columnNumber: 11
                 }, undefined);
             case 'circle':
@@ -930,7 +947,7 @@ const App = ()=>{
                     }
                 }, void 0, false, {
                     fileName: "app.tsx",
-                    lineNumber: 142,
+                    lineNumber: 158,
                     columnNumber: 11
                 }, undefined);
         }
@@ -1008,13 +1025,20 @@ const App = ()=>{
     };
     (0, _react.useEffect)(()=>{
         const handleMouseMove = (e)=>{
+            // Track mouse position for chase mode
+            const mouseXPercent = e.clientX / window.innerWidth * 100;
+            const mouseYPercent = e.clientY / window.innerHeight * 100;
+            setMousePosition({
+                x: mouseXPercent,
+                y: mouseYPercent
+            });
             if (!buttonRef.current || draggingStick) return;
             const buttonRect = buttonRef.current.getBoundingClientRect();
             const buttonCenterX = buttonRect.left + buttonRect.width / 2;
             const buttonCenterY = buttonRect.top + buttonRect.height / 2;
             const distance = Math.sqrt(Math.pow(e.clientX - buttonCenterX, 2) + Math.pow(e.clientY - buttonCenterY, 2));
             const threshold = 150;
-            if (distance < threshold) {
+            if (gameMode === 'escape' && distance < threshold) {
                 // Activate shrink ability if available and user is very close
                 if (canShrink && !isShrunken && !isTranslucent && distance < 100) {
                     setIsShrunken(true);
@@ -1091,7 +1115,46 @@ const App = ()=>{
     }, [
         position,
         placedSticks,
-        draggingStick
+        draggingStick,
+        gameMode,
+        canShrink,
+        isShrunken,
+        canGoTranslucent,
+        isTranslucent,
+        translucentOpacity
+    ]);
+    // Chase mode: button follows cursor
+    (0, _react.useEffect)(()=>{
+        if (gameMode === 'chase' && !draggingStick && !showModal) {
+            const chaseInterval = setInterval(()=>{
+                const dx = mousePosition.x - position.x;
+                const dy = mousePosition.y - position.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                // Check if button caught the cursor
+                if (distance < 5) {
+                    setShowModal(true);
+                    return;
+                }
+                // Move button towards cursor (slower than escape mode)
+                const speed = 7; // slower than escape mode
+                const newX = position.x + dx / distance * speed;
+                const newY = position.y + dy / distance * speed;
+                const clampedX = Math.max(5, Math.min(95, newX));
+                const clampedY = Math.max(5, Math.min(85, newY));
+                if (!checkCollision(clampedX, clampedY)) setPosition({
+                    x: clampedX,
+                    y: clampedY
+                });
+            }, 50);
+            return ()=>clearInterval(chaseInterval);
+        }
+    }, [
+        gameMode,
+        mousePosition,
+        position,
+        draggingStick,
+        placedSticks,
+        showModal
     ]);
     return /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
         style: {
@@ -1138,7 +1201,7 @@ const App = ()=>{
                                 children: renderStickShape(stickType)
                             }, void 0, false, {
                                 fileName: "app.tsx",
-                                lineNumber: 361,
+                                lineNumber: 413,
                                 columnNumber: 15
                             }, undefined),
                             /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -1159,18 +1222,18 @@ const App = ()=>{
                                 ]
                             }, void 0, true, {
                                 fileName: "app.tsx",
-                                lineNumber: 364,
+                                lineNumber: 416,
                                 columnNumber: 15
                             }, undefined)
                         ]
                     }, stickType, true, {
                         fileName: "app.tsx",
-                        lineNumber: 351,
+                        lineNumber: 403,
                         columnNumber: 13
                     }, undefined))
             }, void 0, false, {
                 fileName: "app.tsx",
-                lineNumber: 331,
+                lineNumber: 383,
                 columnNumber: 7
             }, undefined),
             placedSticks.map((stick)=>/*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -1184,7 +1247,7 @@ const App = ()=>{
                     children: renderStickShape(stick.type)
                 }, stick.id, false, {
                     fileName: "app.tsx",
-                    lineNumber: 384,
+                    lineNumber: 436,
                     columnNumber: 9
                 }, undefined)),
             draggingStick && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
@@ -1200,7 +1263,7 @@ const App = ()=>{
                 children: renderStickShape(draggingStick)
             }, void 0, false, {
                 fileName: "app.tsx",
-                lineNumber: 400,
+                lineNumber: 452,
                 columnNumber: 9
             }, undefined),
             /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
@@ -1226,22 +1289,125 @@ const App = ()=>{
                 children: "Click Me"
             }, void 0, false, {
                 fileName: "app.tsx",
-                lineNumber: 416,
+                lineNumber: 468,
                 columnNumber: 7
+            }, undefined),
+            showModal && /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                style: {
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 2000
+                },
+                children: /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                    style: {
+                        backgroundColor: 'white',
+                        padding: '40px',
+                        borderRadius: '10px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        textAlign: 'center',
+                        maxWidth: '400px'
+                    },
+                    children: [
+                        /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("h2", {
+                            style: {
+                                marginBottom: '20px',
+                                color: '#333'
+                            },
+                            children: gameMode === 'escape' ? "You caught me! \uD83C\uDF89" : "I caught you! \uD83D\uDE08"
+                        }, void 0, false, {
+                            fileName: "app.tsx",
+                            lineNumber: 514,
+                            columnNumber: 13
+                        }, undefined),
+                        /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("p", {
+                            style: {
+                                marginBottom: '30px',
+                                color: '#666'
+                            },
+                            children: "Were you that bored? If so, let's do it again"
+                        }, void 0, false, {
+                            fileName: "app.tsx",
+                            lineNumber: 517,
+                            columnNumber: 13
+                        }, undefined),
+                        /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("div", {
+                            style: {
+                                display: 'flex',
+                                gap: '15px',
+                                justifyContent: 'center'
+                            },
+                            children: [
+                                /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
+                                    onClick: handleClose,
+                                    style: {
+                                        padding: '12px 24px',
+                                        fontSize: '16px',
+                                        cursor: 'pointer',
+                                        backgroundColor: '#6c757d',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px'
+                                    },
+                                    children: "Close"
+                                }, void 0, false, {
+                                    fileName: "app.tsx",
+                                    lineNumber: 521,
+                                    columnNumber: 15
+                                }, undefined),
+                                /*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)("button", {
+                                    onClick: handleSwitchRoles,
+                                    style: {
+                                        padding: '12px 24px',
+                                        fontSize: '16px',
+                                        cursor: 'pointer',
+                                        backgroundColor: '#007bff',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px'
+                                    },
+                                    children: "Switch Roles"
+                                }, void 0, false, {
+                                    fileName: "app.tsx",
+                                    lineNumber: 535,
+                                    columnNumber: 15
+                                }, undefined)
+                            ]
+                        }, void 0, true, {
+                            fileName: "app.tsx",
+                            lineNumber: 520,
+                            columnNumber: 13
+                        }, undefined)
+                    ]
+                }, void 0, true, {
+                    fileName: "app.tsx",
+                    lineNumber: 506,
+                    columnNumber: 11
+                }, undefined)
+            }, void 0, false, {
+                fileName: "app.tsx",
+                lineNumber: 494,
+                columnNumber: 9
             }, undefined)
         ]
     }, void 0, true, {
         fileName: "app.tsx",
-        lineNumber: 323,
+        lineNumber: 375,
         columnNumber: 5
     }, undefined);
 };
-_s(App, "LMdVF4/ILFz/9vy6z7c1Y19qsLs=");
+_s(App, "U8M999RoupU/XcRgw3DmyAvFifg=");
 _c = App;
 const root = (0, _clientDefault.default).createRoot(document.getElementById('root'));
 root.render(/*#__PURE__*/ (0, _jsxDevRuntime.jsxDEV)(App, {}, void 0, false, {
     fileName: "app.tsx",
-    lineNumber: 444,
+    lineNumber: 558,
     columnNumber: 13
 }, undefined));
 var _c;

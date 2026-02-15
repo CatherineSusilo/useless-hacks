@@ -342,7 +342,7 @@ const App: React.FC = () => {
   
   // Chase mode: button follows cursor
   useEffect(() => {
-    if (gameMode === 'chase' && !draggingStick) {
+    if (gameMode === 'chase' && !draggingStick && !showModal) {
       const chaseInterval = setInterval(() => {
         const dx = mousePosition.x - position.x;
         const dy = mousePosition.y - position.y;
@@ -355,7 +355,7 @@ const App: React.FC = () => {
         }
         
         // Move button towards cursor (slower than escape mode)
-        const speed = 0.5; // slower than escape mode
+        const speed = 7; // slower than escape mode
         const newX = position.x + (dx / distance) * speed;
         const newY = position.y + (dy / distance) * speed;
         
@@ -369,7 +369,7 @@ const App: React.FC = () => {
       
       return () => clearInterval(chaseInterval);
     }
-  }, [gameMode, mousePosition, position, draggingStick, placedSticks]);
+  }, [gameMode, mousePosition, position, draggingStick, placedSticks, showModal]);
 
   return (
     <div style={{ 
